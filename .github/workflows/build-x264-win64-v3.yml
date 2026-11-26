@@ -35,7 +35,6 @@ jobs:
             --disable-doc \
             --disable-avdevice \
             --disable-swresample \
-            --disable-postproc \
             --disable-avfilter \
             --disable-network \
             --extra-cflags="-march=x86-64-v3 -O3"
