@@ -16,7 +16,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            git make nasm meson ninja-build mingw-w64 pkg-config ca-certificates xz-utils
+            git make nasm mingw-w64 pkg-config ca-certificates xz-utils
 
       - name: Build static FFmpeg (lavf) for mingw-w64 x86-64-v3
         run: |
@@ -45,28 +45,14 @@ jobs:
           DEPS_DIR="$PWD/deps-win64-v3"
           git clone --depth=1 https://github.com/l-smash/l-smash.git lsmash-src
           cd lsmash-src
-          cat << 'EOF' > cross-win64-v3.ini
-          [binaries]
-          c = 'x86_64-w64-mingw32-gcc'
-          ar = 'x86_64-w64-mingw32-ar'
-          strip = 'x86_64-w64-mingw32-strip'
-          pkg-config = 'x86_64-w64-mingw32-pkg-config'
-
-          [host_machine]
-          system = 'windows'
-          cpu_family = 'x86_64'
-          cpu = 'x86_64'
-          endian = 'little'
-
-          [built-in options]
-          c_args = ['-march=x86-64-v3', '-O3']
-          EOF
-          meson setup build-win64-v3 \
-            --cross-file cross-win64-v3.ini \
+          ./configure \
             --prefix="$DEPS_DIR" \
-            --default-library=static
-          ninja -C build-win64-v3
-          ninja -C build-win64-v3 install
+            --target-os=mingw \
+            --cross-prefix=x86_64-w64-mingw32- \
+            --enable-static \
+            --extra-cflags="-march=x86-64-v3 -O3"
+          make -j"$(nproc)"
+          make install
 
       - name: Clone x264 at commit c1c9931
         run: |
