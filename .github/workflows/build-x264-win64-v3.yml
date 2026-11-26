@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  GIT_TERMINAL_PROMPT: "0"
+
 jobs:
   build-basic-lavf-lsmash:
     runs-on: ubuntu-latest
@@ -22,7 +25,7 @@ jobs:
         run: |
           DEPS_DIR="$PWD/deps-win64-v3"
           mkdir -p "$DEPS_DIR"
-          git clone --depth=1 https://github.com/wang-bin/libobuparse.git obuparse-src
+          git clone --depth=1 https://github.com/dwbuiten/obuparse.git obuparse-src
           cd obuparse-src
           cmake -B build-win64-v3 \
             -DCMAKE_SYSTEM_NAME=Windows \
