@@ -1,0 +1,45 @@
+name: Build x264 Windows x86-64-v3
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install cross-compilation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git make nasm mingw-w64 ca-certificates
+
+      - name: Clone x264 at commit c1c9931
+        run: |
+          git clone https://code.videolan.org/videolan/x264.git
+          cd x264
+          git checkout c1c9931
+
+      - name: Build x264 for Windows x86-64-v3
+        run: |
+          cd x264
+          ./configure \
+            --host=x86_64-w64-mingw32 \
+            --cross-prefix=x86_64-w64-mingw32- \
+            --enable-static \
+            --enable-strip \
+            --prefix="$PWD/out-win64-v3" \
+            --extra-cflags="-march=x86-64-v3 -O3" \
+            --extra-ldflags="-static"
+          make -j"$(nproc)"
+          make install
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: x264-r3172-c1c9931-windows-x86_64-v3
+          path: x264/out-win64-v3/
