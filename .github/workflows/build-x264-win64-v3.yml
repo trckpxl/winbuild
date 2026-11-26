@@ -28,7 +28,6 @@ jobs:
             --prefix="$DEPS_DIR" \
             --target-os=mingw \
             --cross-prefix=x86_64-w64-mingw32- \
-            --enable-static \
             --extra-cflags="-march=x86-64-v3 -O3"
           make -j"$(nproc)"
           make install
