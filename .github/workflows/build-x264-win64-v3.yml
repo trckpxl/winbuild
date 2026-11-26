@@ -9,16 +9,16 @@ permissions:
   contents: read
 
 jobs:
-  build-basic-lavf:
+  build-basic-lavf-lsmash:
     runs-on: ubuntu-latest
     steps:
       - name: Install cross-compilation dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            git make nasm mingw-w64 pkg-config ca-certificates xz-utils
+            git make nasm meson ninja-build mingw-w64 pkg-config ca-certificates xz-utils
 
-      - name: Build static FFmpeg (lavf + GPL) for mingw-w64 x86-64-v3
+      - name: Build static FFmpeg (lavf) for mingw-w64 x86-64-v3
         run: |
           git clone --depth=1 https://git.ffmpeg.org/ffmpeg.git ffmpeg-src
           cd ffmpeg-src
@@ -28,7 +28,6 @@ jobs:
             --target-os=mingw32 \
             --cross-prefix=x86_64-w64-mingw32- \
             --enable-cross-compile \
-            --enable-gpl \
             --enable-static \
             --disable-shared \
             --disable-programs \
@@ -41,13 +40,41 @@ jobs:
           make -j"$(nproc)"
           make install
 
+      - name: Build static L-SMASH for mingw-w64 x86-64-v3
+        run: |
+          DEPS_DIR="$PWD/deps-win64-v3"
+          git clone --depth=1 https://github.com/l-smash/l-smash.git lsmash-src
+          cd lsmash-src
+          cat << 'EOF' > cross-win64-v3.ini
+          [binaries]
+          c = 'x86_64-w64-mingw32-gcc'
+          ar = 'x86_64-w64-mingw32-ar'
+          strip = 'x86_64-w64-mingw32-strip'
+          pkg-config = 'x86_64-w64-mingw32-pkg-config'
+
+          [host_machine]
+          system = 'windows'
+          cpu_family = 'x86_64'
+          cpu = 'x86_64'
+          endian = 'little'
+
+          [built-in options]
+          c_args = ['-march=x86-64-v3', '-O3']
+          EOF
+          meson setup build-win64-v3 \
+            --cross-file cross-win64-v3.ini \
+            --prefix="$DEPS_DIR" \
+            --default-library=static
+          ninja -C build-win64-v3
+          ninja -C build-win64-v3 install
+
       - name: Clone x264 at commit c1c9931
         run: |
           git clone https://code.videolan.org/videolan/x264.git
           cd x264
           git checkout c1c9931
 
-      - name: Configure and build x264 with lavf for Windows x86-64-v3
+      - name: Configure and build x264 with lavf and l-smash for Windows x86-64-v3
         run: |
           DEPS_DIR="$PWD/deps-win64-v3"
           export PKG_CONFIG_LIBDIR="$DEPS_DIR/lib/pkgconfig"
@@ -63,8 +90,8 @@ jobs:
           make -j"$(nproc)"
           make install
 
-      - name: Upload basic-lavf artifact
+      - name: Upload basic artifact
         uses: actions/upload-artifact@v4
         with:
-          name: x264-r3172-c1c9931-lavf-win64-v3
+          name: x264-r3172-c1c9931-lavf-lsmash-win64-v3
           path: x264/out-win64-v3/
