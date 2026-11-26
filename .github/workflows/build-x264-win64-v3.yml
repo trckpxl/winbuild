@@ -16,19 +16,35 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            git make nasm mingw-w64 pkg-config ca-certificates xz-utils
+            git make cmake nasm mingw-w64 pkg-config ca-certificates xz-utils
+
+      - name: Build static libobuparse for mingw-w64 x86-64-v3
+        run: |
+          DEPS_DIR="$PWD/deps-win64-v3"
+          mkdir -p "$DEPS_DIR"
+          git clone --depth=1 https://github.com/wang-bin/libobuparse.git obuparse-src
+          cd obuparse-src
+          cmake -B build-win64-v3 \
+            -DCMAKE_SYSTEM_NAME=Windows \
+            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+            -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres \
+            -DCMAKE_INSTALL_PREFIX="$DEPS_DIR" \
+            -DCMAKE_C_FLAGS="-march=x86-64-v3 -O3" \
+            -DBUILD_SHARED_LIBS=OFF
+          cmake --build build-win64-v3 -j"$(nproc)"
+          cmake --install build-win64-v3
 
       - name: Build static L-SMASH for mingw-w64 x86-64-v3
         run: |
           DEPS_DIR="$PWD/deps-win64-v3"
-          mkdir -p "$DEPS_DIR"
           git clone --depth=1 https://github.com/vimeo/l-smash.git lsmash-src
           cd lsmash-src
           ./configure \
             --prefix="$DEPS_DIR" \
             --target-os=mingw \
             --cross-prefix=x86_64-w64-mingw32- \
-            --extra-cflags="-march=x86-64-v3 -O3"
+            --extra-cflags="-I${DEPS_DIR}/include -march=x86-64-v3 -O3" \
+            --extra-ldflags="-L${DEPS_DIR}/lib"
           make -j"$(nproc)"
           make install
 
