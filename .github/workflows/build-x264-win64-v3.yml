@@ -18,12 +18,29 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             git make nasm mingw-w64 pkg-config ca-certificates xz-utils
 
+      - name: Build static L-SMASH for mingw-w64 x86-64-v3
+        run: |
+          DEPS_DIR="$PWD/deps-win64-v3"
+          mkdir -p "$DEPS_DIR"
+          git clone --depth=1 https://github.com/l-smash/l-smash.git lsmash-src
+          cd lsmash-src
+          ls -la
+          ./configure \
+            --prefix="$DEPS_DIR" \
+            --target-os=mingw \
+            --cross-prefix=x86_64-w64-mingw32- \
+            --enable-static \
+            --extra-cflags="-march=x86-64-v3 -O3"
+          make -j"$(nproc)"
+          make install
+
       - name: Build static FFmpeg (lavf) for mingw-w64 x86-64-v3
         run: |
+          DEPS_DIR="$PWD/deps-win64-v3"
           git clone --depth=1 https://git.ffmpeg.org/ffmpeg.git ffmpeg-src
           cd ffmpeg-src
           ./configure \
-            --prefix="$PWD/../deps-win64-v3" \
+            --prefix="$DEPS_DIR" \
             --arch=x86_64 \
             --target-os=mingw32 \
             --cross-prefix=x86_64-w64-mingw32- \
@@ -36,20 +53,6 @@ jobs:
             --disable-swresample \
             --disable-avfilter \
             --disable-network \
-            --extra-cflags="-march=x86-64-v3 -O3"
-          make -j"$(nproc)"
-          make install
-
-      - name: Build static L-SMASH for mingw-w64 x86-64-v3
-        run: |
-          DEPS_DIR="$PWD/deps-win64-v3"
-          git clone --depth=1 https://github.com/l-smash/l-smash.git lsmash-src
-          cd lsmash-src
-          ./configure \
-            --prefix="$DEPS_DIR" \
-            --target-os=mingw \
-            --cross-prefix=x86_64-w64-mingw32- \
-            --enable-static \
             --extra-cflags="-march=x86-64-v3 -O3"
           make -j"$(nproc)"
           make install
